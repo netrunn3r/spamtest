@@ -1,0 +1,16 @@
+
+# SASL Options
+smtpd_sasl_type = cyrus
+smtpd_sasl_path = smtpd
+smtpd_sasl_auth_enable = no
+smtpd_sasl_security_options = noanonymous
+
+# TLS Options
+smtpd_tls_key_file = /etc/ssl/private/mailing.key
+smtpd_tls_cert_file = /etc/ssl/certs/mailing.crt
+smtpd_tls_security_level = may
+smtp_tls_security_level = may
+#smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtpd_tls_CAfile = /etc/ssl/certs/cacert.pem
+smtpd_tls_loglevel = 1
+smtp_tls_loglevel = 1
