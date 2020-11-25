@@ -45,39 +45,39 @@ def build_email(headers, subject, include_html=False, include_txt=False, include
     html_body_name = 'body.html'
 
     if include_img:
-        with open('image.png', 'rb') as fimg:
+        with open('email_components/image.png', 'rb') as fimg:
             msg_image = MIMEImage(fimg.read())
             msg_image.add_header('Content-ID', '<image1>')
             msg_root.attach(msg_image)
             if include_link:
-                html_body_name = 'body_img_link.html'
+                html_body_name = 'email_components/body_img_link.html'
             elif include_exelink:
-                html_body_name = 'body_img_exelink.html'
+                html_body_name = 'email_components/body_img_exelink.html'
             else:
-                html_body_name = 'body_img.html'
+                html_body_name = 'email_components/body_img.html'
     elif include_html:
-        html_body_name = 'body.html'        
+        html_body_name = 'email_components/body.html'        
     with open(html_body_name, 'r') as fhtml:
         msg_html = MIMEText(fhtml.read(), 'html', 'UTF-8')
         msg_root.attach(msg_html)
     
     if include_txt:
-        with open('body.txt', 'r') as ftxt:
+        with open('email_components/body.txt', 'r') as ftxt:
             msg_text = MIMEText(ftxt.read(), 'plain', 'utf-8')
             msg_root.attach(msg_text)
 
     if include_exe:
-        with open('putty_x86.exe', 'rb') as fexe:
+        with open('email_components/putty_x86.exe', 'rb') as fexe:
             msg_exe = MIMEApplication(fexe.read())
             msg_root.attach(msg_exe)
 
     if include_macro:
-        with open('gdpr_survey.xlsm', 'rb') as fmacro:
+        with open('email_components/gdpr_survey.xlsm', 'rb') as fmacro:
             msg_macro = MIMEApplication(fmacro.read())
             msg_root.attach(msg_macro)
 
     if include_encrypt:
-        with open('encrypted.zip', 'rb') as fencrypt:
+        with open('email_components/encrypted.zip', 'rb') as fencrypt:
             msg_encrypt = MIMEApplication(fencrypt.read())
             msg_root.attach(msg_encrypt)
 
