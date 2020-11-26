@@ -62,10 +62,10 @@ For each domain which will have DKIM records, i.e.:
 2. dkim-spf.spamtest.operator-domain.com
 
 We need generate private and public keys:
-1. openssl genrsa -out dkim.spamtest.operator-domain.com.key 2048.
-2. openssl rsa -in dkim.spamtest.operator-domain.com.key -pubout -out dkim.spamtest.operator-domain.com.pub
-3. openssl genrsa -out dkim-spf.spamtest.operator-domain.com.key 2048.
-4. openssl rsa -in dkim-spf.spamtest.operator-domain.com.key -pubout -out dkim-spf.spamtest.operator-domain.com.pub
+1. `openssl genrsa -out dkim.spamtest.operator-domain.com.key 2048`
+2. `openssl rsa -in dkim.spamtest.operator-domain.com.key -pubout -out dkim.spamtest.operator-domain.com.pub`
+3. `openssl genrsa -out dkim-spf.spamtest.operator-domain.com.key 2048`
+4. `openssl rsa -in dkim-spf.spamtest.operator-domain.com.key -pubout -out dkim-spf.spamtest.operator-domain.com.pub`
 
 **spam_tester.py will be looking for filename exactly like `body From:` header with .key suffix.**
 
@@ -108,14 +108,16 @@ pass = 'msa_pass'
 
 ### Postfix
 To simplify deployment, docker container has been prepared with preconfigured Postfix to act as a MSA. To build image below command can be performed:
+
 `docker build --pull --rm -f "path\to\spamtest\docker\Dockerfile" -t postfix-msa:latest --build-arg HOSTNAME=mail --build-arg DOMAIN=spamtest.operator-domain.com spamtest "path\to\spamtest\docker"`
 
 Then, container can be run:
+
 `docker run --rm -it --name spamtest -p 587:587 --hostname mail --domainname spamtest.operator-domain.com`
 
 Where:
-* _--build-arg HOSTNAME=mail_ and _--hostname mail_ is hostname of docker container
-* _--build-arg DOMAIN=spamtest.operator-domain.com_ and _--domainname spamtest.operator-domain.com_ is domain of docker container
+* `--build-arg HOSTNAME=mail` and `--hostname mail` is hostname of docker container
+* `--build-arg DOMAIN=spamtest.operator-domain.com` and `--domainname spamtest.operator-domain.com` is domain of docker container
 Both will be in rDNS and it will be use in comunication with target MTA server as mail.spamtest.operator-domain.com
 
 After run a container, it will display output from syslog - connections to postfix.
