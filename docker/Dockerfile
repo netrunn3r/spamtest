@@ -2,6 +2,9 @@ FROM alpine:3.12
 
 EXPOSE 587
 
+ARG HOSTNAME=mail
+ARG DOMAIN=custom_msa.com
+
 ADD main.cf /tmp
 
 RUN apk update && apk --no-cache add \
@@ -28,8 +31,8 @@ RUN apk update && apk --no-cache add \
     && sed -i 's/^module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf \
     && sed -i 's/^kern.*/#kern.*/' /etc/rsyslog.conf \
     && sed -i 's/^*.emerg/#*.emerg/' /etc/rsyslog.conf \
-    && sed -i 's/^#myhostname = host.domain.tld/myhostname = mail.custom_msa.com/' /etc/postfix/main.cf \
-    && sed -i 's/^#mydomain = domain.tld/mydomain = custom_msa.com/' /etc/postfix/main.cf \
+    && sed -i 's/^#myhostname = host.domain.tld/myhostname = $HOSTNAME.$DOMAIN/' /etc/postfix/main.cf \
+    && sed -i 's/^#mydomain = domain.tld/mydomain = $DOMAIN/' /etc/postfix/main.cf \
     && newaliases
 
 ADD smtpd.conf /etc/sasl2/smtpd.conf
