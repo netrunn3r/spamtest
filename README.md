@@ -73,27 +73,27 @@ We need generate private and public keys:
 You can configure spam_tester.py in file spam_tester.conf, which looks like this:
 ```ini
 [victim]
-reciptien_name = 'John Smith'
-reciptien_email = 'john.smith@example.com'
+reciptien_name = John Smith
+reciptien_email = john.smith@example.com
 
 [attacker]
-attacker_name = 'Uncle Fred'
-victim_domain_email = 'uncle.fred@example.com'
-attacker_domain_none_email = 'uncle.fred@none.ex4mple.com'
-attacker_domain_dkim_email = 'uncle.fred@dkim.ex4mple.com'
-attacker_domain_spf_email = 'uncle.fred@spf.ex4mple.com'
-attacker_domain_dkim_spf_email = 'uncle.fred@dkim-spf.ex4mple.com'
+attacker_name = Uncle Fred
+victim_domain_email = uncle.fred@example.com
+attacker_domain_none_email = uncle.fred@none.ex4mple.com
+attacker_domain_dkim_email = uncle.fred@dkim.ex4mple.com
+attacker_domain_spf_email = uncle.fred@spf.ex4mple.com
+attacker_domain_dkim_spf_email = uncle.fred@dkim-spf.ex4mple.com
 
 [mailtrap]
-enabled = 'yes'
-user = 'some_user'
-pass = 'some_pass'
+enabled = yes
+user = some_user
+pass = some_pass
 
 [custom_msa]
-enabled = 'yes'
-address = '127.0.0.1'
-user = 'msa_user'
-pass = 'msa_pass'
+enabled = yes
+address = 127.0.0.1
+user = msa_user
+pass = msa_pass
 ```
 
 `[victim]` section is about target email, to which we will send our mails. `reciptien_email` is used as a value of `SMTP RCPT` and `body To:` headers, where `reciptien_name` in `body To:` header.
