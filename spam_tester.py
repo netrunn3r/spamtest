@@ -13,11 +13,13 @@ import dns.resolver
 import io
 import socket
 import configparser
+import time
+from pathlib import Path
 
 
 # create structure with email headers
 def set_headers(smtp_from, from_email, from_name, to_email, to_name):
-    # Antispam don't like when allis in utf-8
+    # Antispam don't like when all is in utf-8
     cs=email.charset.Charset('utf-8')
     cs.header_encoding = email.charset.QP
     from_full = Header(from_name,'ascii')
@@ -42,42 +44,44 @@ def build_email(headers, subject, include_html=False, include_txt=False, include
     rand_id = random.choices('qwertyuiopasdfghjklzxcvbnm1234567890', k=16)
     msg_root['Message-ID'] = f'<{"".join(rand_id)}@{headers["smtp_domain"]}>'
     msg_root.preamble = 'This is a multi-part message in MIME format.'
-    html_body_name = 'body.html'
+    html_body_name = Path('email_components/body.html')  # TODO add encoding
 
     if include_img:
-        with open('email_components/image.png', 'rb') as fimg:
+        with open(Path('email_components/image.png'), 'rb') as fimg:
             msg_image = MIMEImage(fimg.read())
             msg_image.add_header('Content-ID', '<image1>')
             msg_root.attach(msg_image)
             if include_link:
-                html_body_name = 'email_components/body_img_link.html'
+                html_body_name = Path('email_components/body_img_link.html')
             elif include_exelink:
-                html_body_name = 'email_components/body_img_exelink.html'
+                html_body_name = Path('email_components/body_img_exelink.html')
             else:
-                html_body_name = 'email_components/body_img.html'
+                html_body_name = Path('email_components/body_img.html')
     elif include_html:
-        html_body_name = 'email_components/body.html'        
-    with open(html_body_name, 'r') as fhtml:
-        msg_html = MIMEText(fhtml.read(), 'html', 'UTF-8')
-        msg_root.attach(msg_html)
+        html_body_name = Path('email_components/body.html')        
+    
+    if include_html or include_img:
+        with open(html_body_name, 'r', encoding='utf-8') as fhtml:
+            msg_html = MIMEText(fhtml.read(), 'html', 'UTF-8')
+            msg_root.attach(msg_html)
     
     if include_txt:
-        with open('email_components/body.txt', 'r') as ftxt:
+        with open(Path('email_components/body.txt'), 'r', encoding='utf-8') as ftxt:
             msg_text = MIMEText(ftxt.read(), 'plain', 'utf-8')
             msg_root.attach(msg_text)
 
     if include_exe:
-        with open('email_components/putty_x86.exe', 'rb') as fexe:
+        with open(Path('email_components/putty_x86.exe'), 'rb') as fexe:
             msg_exe = MIMEApplication(fexe.read())
             msg_root.attach(msg_exe)
 
-    if include_macro:
-        with open('email_components/gdpr_survey.xlsm', 'rb') as fmacro:
+    if include_macro:  # TODO it is received as noname (application/octet-stream)
+        with open(Path('email_components/gdpr_survey.xlsm'), 'rb') as fmacro:
             msg_macro = MIMEApplication(fmacro.read())
             msg_root.attach(msg_macro)
 
     if include_encrypt:
-        with open('email_components/encrypted.zip', 'rb') as fencrypt:
+        with open(Path('email_components/encrypted.zip'), 'rb') as fencrypt:
             msg_encrypt = MIMEApplication(fencrypt.read())
             msg_root.attach(msg_encrypt)
 
@@ -112,6 +116,8 @@ def build_email(headers, subject, include_html=False, include_txt=False, include
 
 # connect to smtp server and sent email
 def sent_email(server, headers, msg):
+    # TODO add to config file
+    time.sleep(1.5)  # gmail has limit 60 mails / minute 
     if mailtrap:
         f = io.StringIO()
         with redirect_stderr(f):
@@ -162,7 +168,7 @@ def get_smtp_server(reciptien_domain):
 
 def sent_bulk(server, headers, subject_prefix, inc_dkim_key=False):
     dkim_str = 'dkim' if inc_dkim_key else 'no_dkim'
-    ## only txt
+    # # only txt
     # subject = f'{subject_prefix} - {dkim_str}, txt'
     # msg = build_email(headers, subject, include_dkim_key=inc_dkim_key, include_txt=True)
     # sent_email(server, headers, msg) 
@@ -174,7 +180,7 @@ def sent_bulk(server, headers, subject_prefix, inc_dkim_key=False):
     # subject = f'{subject_prefix} - {dkim_str}, txt, html'
     # msg = build_email(headers, subject, include_dkim_key=inc_dkim_key, include_html=True, include_txt=True)
     # sent_email(server, headers, msg) 
-    ## html + txt + img
+    # html + txt + img
     subject = f'{subject_prefix} - {dkim_str}, txt, html, img'
     msg = build_email(headers, subject, include_dkim_key=inc_dkim_key, include_html=True, include_txt=True, include_img=True)
     sent_email(server, headers, msg) 
@@ -211,24 +217,25 @@ attacker_domain_dkim_email = config['attacker']['attacker_domain_dkim_email']
 attacker_domain_spf_email = config['attacker']['attacker_domain_spf_email']
 attacker_domain_dkim_spf_email = config['attacker']['attacker_domain_dkim_spf_email']
 
-reciptien_domain = reciptien_email.split('@')[1]  
-address = get_smtp_server(reciptien_domain)
 server = {}
-server['address'] = address
 
 # TODO these are global variables, change data flow
-mailtrap = True if config['mailtrap']['enabled'] == 'yes' else False
+mailtrap = True if str(config['mailtrap']['enabled']) == 'yes' else False
 mailtrap_user = config['mailtrap']['user']
 mailtrap_pass = config['mailtrap']['pass']
 custom_msa = True if config['custom_msa']['enabled'] == 'yes' else False
 custom_msa_user = config['custom_msa']['user']
 custom_msa_pass = config['custom_msa']['pass']
 custom_msa_address = config['custom_msa']['address']
-
+    
 if mailtrap:
     server['address'] = 'smtp.mailtrap.io'
-if custom_msa:
+elif custom_msa:
     server['address'] = config['custom_msa']['address']
+else:
+    reciptien_domain = reciptien_email.split('@')[1]  
+    address = get_smtp_server(reciptien_domain)
+    server['address'] = address
     
 sock_587 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock_25 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -259,45 +266,47 @@ else:
 # attacker_*                victim_domain_email
 # attacker_*                attacker_*
 
+# TODO add to config parameters which type of test todo
+
 subject_prefix = 'Victim/victim domain'
 headers = set_headers(victim_domain_email, victim_domain_email, attacker_name, reciptien_email, reciptien_name)
-#sent_bulk(server, headers, subject_prefix)
+sent_bulk(server, headers, subject_prefix)
 
-subject_prefix = 'Victim/attacker'
+# subject_prefix = 'Victim/attacker'
 # headers = set_headers(victim_domain_email, attacker_domain_none_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix)
-subject_prefix = 'Victim/attacker domain with DKIM'
+# subject_prefix = 'Victim/attacker domain with DKIM'
 # headers = set_headers(victim_domain_email, attacker_domain_dkim_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix, inc_dkim_key=True)
-subject_prefix = 'Victim/attacker domain with SPF'
+# subject_prefix = 'Victim/attacker domain with SPF'
 # headers = set_headers(victim_domain_email, attacker_domain_spf_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix)
-subject_prefix = 'Victim/attacker domain with DKIM and SPF'
-headers = set_headers(victim_domain_email, attacker_domain_dkim_spf_email, attacker_name, reciptien_email, reciptien_name)
-#sent_bulk(server, headers, subject_prefix, inc_dkim_key=True)
+# subject_prefix = 'Victim/attacker domain with DKIM and SPF'
+# headers = set_headers(victim_domain_email, attacker_domain_dkim_spf_email, attacker_name, reciptien_email, reciptien_name)
+# sent_bulk(server, headers, subject_prefix, inc_dkim_key=True)
 
-subject_prefix = 'Attacker/victim'
+# subject_prefix = 'Attacker/victim'
 # headers = set_headers(attacker_domain_none_email, victim_domain_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix)
-subject_prefix = 'Attacker/victim domain with DKIM'
+# subject_prefix = 'Attacker/victim domain with DKIM'
 # headers = set_headers(attacker_domain_dkim_email, victim_domain_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix)
-subject_prefix = 'Attacker/victim domain with SPF'
+# subject_prefix = 'Attacker/victim domain with SPF'
 # headers = set_headers(attacker_domain_spf_email, victim_domain_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix)
-subject_prefix = 'Attacker/victim domain with DKIM and SPF'
-headers = set_headers(attacker_domain_dkim_spf_email, victim_domain_email, attacker_name, reciptien_email, reciptien_name)
-#sent_bulk(server, headers, subject_prefix)
+# subject_prefix = 'Attacker/victim domain with DKIM and SPF'
+# headers = set_headers(attacker_domain_dkim_spf_email, victim_domain_email, attacker_name, reciptien_email, reciptien_name)
+# sent_bulk(server, headers, subject_prefix)
 
-subject_prefix = 'Attacker/attacker'
+# subject_prefix = 'Attacker/attacker'
 # headers = set_headers(attacker_domain_none_email, attacker_domain_none_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix)
-subject_prefix = 'Attacker/attacker domain with DKIM'
+# subject_prefix = 'Attacker/attacker domain with DKIM'
 # headers = set_headers(attacker_domain_dkim_email, attacker_domain_dkim_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix, inc_dkim_key=True)
-subject_prefix = 'Attacker/attacker domain with SPF'
+# subject_prefix = 'Attacker/attacker domain with SPF'
 # headers = set_headers(attacker_domain_spf_email, attacker_domain_spf_email, attacker_name, reciptien_email, reciptien_name)
 # sent_bulk(server, headers, subject_prefix)
-subject_prefix = 'Attacker/attacker domain with DKIM and SPF'
-headers = set_headers(attacker_domain_dkim_spf_email, attacker_domain_dkim_spf_email, attacker_name, reciptien_email, reciptien_name)
-sent_bulk(server, headers, subject_prefix, inc_dkim_key=True)
+# subject_prefix = 'Attacker/attacker domain with DKIM and SPF'
+# headers = set_headers(attacker_domain_dkim_spf_email, attacker_domain_dkim_spf_email, attacker_name, reciptien_email, reciptien_name)
+# sent_bulk(server, headers, subject_prefix, inc_dkim_key=True)
